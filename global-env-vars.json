@@ -1,0 +1,20 @@
+{
+  "BuyStocksFunction": {
+    "BUCKET_NAME": "tsj-alpaca-098123",
+    "ALPACA_ID": "PK6MU6XGW0KY0SSI402E",
+    "ALPACA_SECRET": "ZBvSlwEB8mk1DnbFZHCm18mkmeYdxVLu5nw6c8cR"
+  },
+  "StockRankerFunction": {
+    "BUCKET_NAME": "tsj-alpaca-098123",
+    "GET_FIN_FUNC_NAME": "GetFinancials"
+  },
+  "GetFinancialsFunction": {
+    "BUCKET_NAME": "tsj-alpaca-098123",
+    "FINNHUB_TOKEN": "brqivm7rh5rc4v2pmq8g"
+  },
+  "WatchListUpdaterFunction": {
+    "BUCKET_NAME": "tsj-alpaca-098123",
+    "ALPACA_ID": "PK6MU6XGW0KY0SSI402E",
+    "ALPACA_SECRET": "ZBvSlwEB8mk1DnbFZHCm18mkmeYdxVLu5nw6c8cR"
+  }
+}

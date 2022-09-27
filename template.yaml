@@ -1,0 +1,162 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  alpaca-trading
+
+  Sample SAM Template for alpaca-trading
+
+Globals:
+  Function:
+    Timeout: 180
+
+Parameters:
+  BucketName:
+    Type: String
+    Default: tempalpacatraderbucket
+  AlapcaId:
+    Type: String
+    Default: alpacaid
+  AlpacaSecret:
+    Type: String
+    Default: alpacasecret
+  FinnhubToken:
+    Type: String
+    Default: finnhubtoken
+
+Resources:
+  AlpacaTraderBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Ref BucketName
+      AccessControl: PublicReadWrite
+  WatchListUpdaterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: watchlist_updater/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
+          # SPLUNK_REALM: !Ref realm
+          # OTEL_SERVICE_NAME: watchlistUpdater
+          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
+          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          BUCKET_NAME: !Ref BucketName
+          ALPACA_ID: !Ref AlapcaId
+          ALPACA_SECRET: !Ref AlpacaSecret
+      Events:
+        WatchListUpdater:
+          Type: Api
+          Properties:
+            Path: /watchlistupdate
+            Method: get
+      Layers:
+        - !Ref Libs
+  StockRankerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: stock_ranker/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Environment:
+        Variables:
+          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
+          # SPLUNK_REALM: !Ref realm
+          # OTEL_SERVICE_NAME: watchlistUpdater
+          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
+          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          BUCKET_NAME: !Ref BucketName
+          GET_FIN_FUNC_NAME: GetFinancials
+      Architectures:
+        - x86_64
+      Events:
+        StockRankerEvent:
+          Type: Api
+          Properties:
+            Path: /stockranker
+            Method: get
+      Layers:
+        - !Ref Libs
+  GetFinancialsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetFinancials
+      CodeUri: ./get_financials
+      Runtime: python3.8
+      Handler: app.lambda_handler
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
+          # SPLUNK_REALM: !Ref realm
+          # OTEL_SERVICE_NAME: watchlistUpdater
+          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
+          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          BUCKET_NAME: !Ref BucketName
+          FINNHUB_TOKEN: !Ref FinnhubToken
+      Events:
+        GetFinancials:
+          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /getfinancials
+            Method:  get
+      Layers:
+        - !Ref Libs
+  BuyStocksFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./buy_stocks
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
+          # SPLUNK_REALM: !Ref realm
+          # OTEL_SERVICE_NAME: watchlistUpdater
+          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
+          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+          BUCKET_NAME: !Ref BucketName
+          ALPACA_ID: !Ref AlapcaId
+          ALPACA_SECRET: !Ref AlpacaSecret
+      Events:
+        BuyStocksEvent:
+          Type: Api
+          Properties:
+            Path: /buystocks
+            Method: get
+      Layers:
+        - !Ref Libs
+  Libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: SharedLibs
+      ContentUri: libs
+      CompatibleRuntimes:
+        - python3.8
+      CompatibleArchitectures:
+        - x86_64
+    Metadata:
+      BuildMethod: python3.8
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  HelloWorldApi:
+    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+  WatchListUpdaterFunctionArn:
+    Description: "Watchlist Updater Function ARN"
+    Value: !GetAtt WatchListUpdaterFunction.Arn
+  StockRankerFunctionArn:
+    Description: "Stock Ranker FunctionARN"
+    Value: !GetAtt StockRankerFunction.Arn
+  WatchListUpdaterFunctionRole:
+    Description: "Implicit IAM Role created for WatchListUpdaterFunctionRole function"
+    Value: !GetAtt WatchListUpdaterFunctionRole.Arn
