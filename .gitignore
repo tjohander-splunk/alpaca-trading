@@ -247,3 +247,5 @@ samconfig.toml
 /.aws-sam/build.toml
 /.idea/
 /libs/
+/global-env-vars-instrumentation.json
+/global-env-vars.json
