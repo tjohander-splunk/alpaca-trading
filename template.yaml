@@ -22,6 +22,18 @@ Parameters:
   FinnhubToken:
     Type: String
     Default: finnhubtoken
+#  SplunkAccessToken:
+#    Type: String
+#    Default: splunk-token
+#  Realm:
+#    Type: String
+#    Default: realm
+#  Environment:
+#    Type: String
+#    Default: environment
+#  SplunkOtelLayer:
+#    Type: String
+#    Default: arn:aws:lambda:us-east-1:254067382080:layer:splunk-apm:62
 
 Resources:
   AlpacaTraderBucket:
@@ -29,9 +41,27 @@ Resources:
     Properties:
       BucketName: !Ref BucketName
       AccessControl: PublicReadWrite
+  LambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: stockTraderLambdaRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/AmazonS3FullAccess'
+        - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
   WatchListUpdaterFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: WatchListUpdater
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: watchlist_updater/
       Handler: app.lambda_handler
       Runtime: python3.8
@@ -39,11 +69,11 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
-          # SPLUNK_REALM: !Ref realm
-          # OTEL_SERVICE_NAME: watchlistUpdater
-          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
-          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+#          SPLUNK_ACCESS_TOKEN: !Ref SplunkAccessToken
+#          SPLUNK_REALM: !Ref Realm
+#          OTEL_SERVICE_NAME: watchlistUpdater
+#          OTEL_RESOURCE_ATTRIBUTES: !Ref Environment
+#          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           BUCKET_NAME: !Ref BucketName
           ALPACA_ID: !Ref AlapcaId
           ALPACA_SECRET: !Ref AlpacaSecret
@@ -55,19 +85,24 @@ Resources:
             Method: get
       Layers:
         - !Ref Libs
+#        - !Ref SplunkOtelLayer
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:7'
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-requests:1'
   StockRankerFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: StockRankerFunction
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: stock_ranker/
       Handler: app.lambda_handler
       Runtime: python3.8
       Environment:
         Variables:
-          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
-          # SPLUNK_REALM: !Ref realm
-          # OTEL_SERVICE_NAME: watchlistUpdater
-          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
-          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+#          SPLUNK_ACCESS_TOKEN: !Ref SplunkAccessToken
+#          SPLUNK_REALM: !Ref Realm
+#          OTEL_SERVICE_NAME: stockRanker
+#          OTEL_RESOURCE_ATTRIBUTES: !Ref Environment
+#          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           BUCKET_NAME: !Ref BucketName
           GET_FIN_FUNC_NAME: GetFinancials
       Architectures:
@@ -80,10 +115,13 @@ Resources:
             Method: get
       Layers:
         - !Ref Libs
+#        - !Ref SplunkOtelLayer
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:7'
   GetFinancialsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: GetFinancials
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: ./get_financials
       Runtime: python3.8
       Handler: app.lambda_handler
@@ -91,11 +129,11 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
-          # SPLUNK_REALM: !Ref realm
-          # OTEL_SERVICE_NAME: watchlistUpdater
-          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
-          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+#          SPLUNK_ACCESS_TOKEN: !Ref SplunkAccessToken
+#          SPLUNK_REALM: !Ref Realm
+#          OTEL_SERVICE_NAME: getFinancials
+#          OTEL_RESOURCE_ATTRIBUTES: !Ref Environment
+#          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           BUCKET_NAME: !Ref BucketName
           FINNHUB_TOKEN: !Ref FinnhubToken
       Events:
@@ -103,12 +141,16 @@ Resources:
           Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /getfinancials
-            Method:  get
+            Method: get
       Layers:
         - !Ref Libs
+#        - !Ref SplunkOtelLayer
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-requests:1'
   BuyStocksFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: BuyStocks
+      Role: !GetAtt LambdaRole.Arn
       CodeUri: ./buy_stocks
       Handler: app.lambda_handler
       Runtime: python3.8
@@ -116,11 +158,11 @@ Resources:
         - x86_64
       Environment:
         Variables:
-          # SPLUNK_ACCESS_TOKEN: !Ref splunkAccessToken
-          # SPLUNK_REALM: !Ref realm
-          # OTEL_SERVICE_NAME: watchlistUpdater
-          # OTEL_RESOURCE_ATTRIBUTES: !Ref environment
-          # AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
+#          SPLUNK_ACCESS_TOKEN: !Ref SplunkAccessToken
+#          SPLUNK_REALM: !Ref Realm
+#          OTEL_SERVICE_NAME: buyStocks
+#          OTEL_RESOURCE_ATTRIBUTES: !Ref Environment
+#          AWS_LAMBDA_EXEC_WRAPPER: /opt/otel-instrument
           BUCKET_NAME: !Ref BucketName
           ALPACA_ID: !Ref AlapcaId
           ALPACA_SECRET: !Ref AlpacaSecret
@@ -132,6 +174,9 @@ Resources:
             Method: get
       Layers:
         - !Ref Libs
+#        - !Ref SplunkOtelLayer
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-pandas:7'
+#        - 'arn:aws:lambda:us-east-1:770693421928:layer:Klayers-p39-requests:1'
   Libs:
     Type: AWS::Serverless::LayerVersion
     Properties:
@@ -157,6 +202,3 @@ Outputs:
   StockRankerFunctionArn:
     Description: "Stock Ranker FunctionARN"
     Value: !GetAtt StockRankerFunction.Arn
-  WatchListUpdaterFunctionRole:
-    Description: "Implicit IAM Role created for WatchListUpdaterFunctionRole function"
-    Value: !GetAtt WatchListUpdaterFunctionRole.Arn

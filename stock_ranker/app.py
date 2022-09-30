@@ -8,7 +8,7 @@ import os
 
 def get_quote(ticker):
     input_params = {"symbol": ticker}
-    if appenviron['AWS_SAM_LOCAL']:
+    if 'AWS_SAM_LOCAL' in os.environ:
         lambda_client = boto3.client('lambda', endpoint_url="http://host.docker.internal:3001")
     else:
         lambda_client = boto3.client('lambda')

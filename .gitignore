@@ -243,9 +243,14 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/osx,linux,python,windows,pycharm,visualstudiocode!/samconfig.toml
 
-samconfig.toml
+samconfig.toml.bak
 /.aws-sam/build.toml
 /.idea/
 /libs/
 /global-env-vars-instrumentation.json
 /global-env-vars.json
+/samconfig-instrumentation.toml
+/samconfig.toml.bak
+/samconfig-scratchpad.toml
+!/libs/requirements.txt
+/samconfig.toml

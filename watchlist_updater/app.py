@@ -3,8 +3,8 @@ import requests
 import boto3
 import os
 
-
 # from opentelemetry import trace
+
 
 def lambda_handler(event, context):
     if 'AWS_SAM_LOCAL' in os.environ:
@@ -26,7 +26,7 @@ def lambda_handler(event, context):
         symbols.append(entity.get('symbol'))
     encoded_string = ' '.join(symbols).encode('utf-8')
 
-    s3.Bucket(os.environ['BUCKET_NAME']).put_object(Key='watchlist.txt', Body=encoded_string)
+    s3.Bucket(os.environ['BUCKET_NAME']).put_object(Key='watchlist.txt', Body=encoded_string, ACL='public-read')
 
     return {
         'statusCode': 200,
