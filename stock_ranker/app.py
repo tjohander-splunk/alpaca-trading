@@ -6,7 +6,7 @@ import os
 # from opentelemetry import trace
 
 
-def get_quote(ticker):
+def calc_price_change(ticker):
     input_params = {"symbol": ticker}
     if 'AWS_SAM_LOCAL' in os.environ:
         lambda_client = boto3.client('lambda', endpoint_url="http://host.docker.internal:3001")
@@ -42,9 +42,10 @@ def lambda_handler(event, context):
 
     df = pd.DataFrame(columns=['ticker', 'change'])
     for ticker in watchlist:
-        df = df.append(get_quote(ticker), ignore_index=True)
+        df = df.append(calc_price_change(ticker), ignore_index=True)
         time.sleep(1)
 
+    # Build a list of price gains from lowest (loss) to highest (gain)
     df = df.sort_values(by=['change'], ascending=True)
     df = df.reset_index(drop=True)
     stock_ranking = df['ticker'].tolist()
@@ -53,6 +54,7 @@ def lambda_handler(event, context):
     # customized_span.set_attribute("watchlist", str(watchlist))
     # customized_span.set_attribute("rankings", str(stock_ranking))
 
+    # Write the sorted list to S3
     encoded_string = ' '.join(stock_ranking).encode('utf-8')
     s3_bucket_resource.Bucket(os.environ['BUCKET_NAME']).put_object(Key='rankings.txt', Body=encoded_string)
 
